@@ -1,4 +1,5 @@
 import { Button, CircularProgress, Stack, TextField } from "@mui/material";
+import { useHistory } from "react-router-dom";
 import { Box } from "@mui/system";
 import axios from "axios";
 import { useSnackbar } from "notistack";
@@ -9,15 +10,28 @@ import Header from "./Header";
 import "./Register.css";
 
 const Register = () => {
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const history = useHistory();
   const { enqueueSnackbar } = useSnackbar();
+  const [loading, setLoading] = useState(false);
 
-
+  const handleInput = (e) => {
+    setFormData((prevValue) => ({
+      ...prevValue,
+      [e.target.name]: e.target.value,
+    }));
+  };
   // TODO: CRIO_TASK_MODULE_REGISTER - Implement the register function
   /**
    * Definition for register handler
    * - Function to be called when the user clicks on the register button or submits the register form
    *
    * @param {{ username: string, password: string, confirmPassword: string }} formData
+   *
    *  Object with values of username, password and confirm password user entered to register
    *
    * API endpoint - "POST /auth/register"
@@ -35,7 +49,29 @@ const Register = () => {
    *      "message": "Username is already taken"
    * }
    */
+  // register(formData);
   const register = async (formData) => {
+    if (!validateInput(formData)) return;
+
+    console.log(formData);
+    try {
+      setLoading(true);
+      await axios.post(`${config.endpoint}/auth/register`, {
+        username: formData.username,
+        password: formData.password,
+      });
+      setLoading(false);
+      setFormData({
+        username: "",
+        password: "",
+        confirmPassword: "",
+      });
+      history.push("/login");
+      enqueueSnackbar("Registered Successfully", { variant: "success" });
+    } catch (e) {
+      setLoading(false);
+      enqueueSnackbar(e.response.data.message, { variant: "error" });
+    }
   };
 
   // TODO: CRIO_TASK_MODULE_REGISTER - Implement user input validation logic
@@ -57,6 +93,31 @@ const Register = () => {
    * -    Check that confirmPassword field has the same value as password field - Passwords do not match
    */
   const validateInput = (data) => {
+    if (!data.username) {
+      enqueueSnackbar("Username is a required filed", { variant: "warning" });
+      return false;
+    }
+    if (data.username.length < 6) {
+      enqueueSnackbar("Username must be at least 6 characters", {
+        variant: "warning",
+      });
+      return false;
+    }
+    if (!data.password) {
+      enqueueSnackbar("Password is a required filed", { variant: "warning" });
+      return false;
+    }
+    if (data.password.length < 6) {
+      enqueueSnackbar("Password must be at least 6 characters", {
+        variant: "warning",
+      });
+      return false;
+    }
+    if (data.password !== data.confirmPassword) {
+      enqueueSnackbar("Passwords do not match", { variant: "warning" });
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -78,6 +139,8 @@ const Register = () => {
             name="username"
             placeholder="Enter Username"
             fullWidth
+            value={formData.username}
+            onChange={handleInput}
           />
           <TextField
             id="password"
@@ -87,7 +150,9 @@ const Register = () => {
             type="password"
             helperText="Password must be atleast 6 characters length"
             fullWidth
+            value={formData.password}
             placeholder="Enter a password with minimum 6 characters"
+            onChange={handleInput}
           />
           <TextField
             id="confirmPassword"
@@ -96,15 +161,27 @@ const Register = () => {
             name="confirmPassword"
             type="password"
             fullWidth
+            value={formData.confirmPassword}
+            onChange={handleInput}
           />
-           <Button className="button" variant="contained">
-            Register Now
-           </Button>
+          {loading ? (
+            <Box display="flex" justifyContent="center" alignItems="center">
+              <CircularProgress size={25} color="primary" />
+            </Box>
+          ) : (
+            <Button
+              className="button"
+              variant="contained"
+              onClick={() => register(formData)}
+            >
+              Register Now
+            </Button>
+          )}
           <p className="secondary-action">
             Already have an account?{" "}
-             <a className="link" href="#">
+            <a className="link" href="#">
               Login here
-             </a>
+            </a>
           </p>
         </Stack>
       </Box>
