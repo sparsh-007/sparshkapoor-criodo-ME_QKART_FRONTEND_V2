@@ -1,5 +1,5 @@
 import { Button, CircularProgress, Stack, TextField } from "@mui/material";
-import { useHistory } from "react-router-dom";
+import { useHistory,Link } from "react-router-dom";
 import { Box } from "@mui/system";
 import axios from "axios";
 import { useSnackbar } from "notistack";
@@ -52,6 +52,9 @@ const Register = () => {
   // register(formData);
   const register = async (formData) => {
     if (!validateInput(formData)) return;
+    //this means flase condition only execute when your have false values null or 0 makes sense 
+    // cause only then we want to retun and not on true conditions 
+
 
     console.log(formData);
     try {
@@ -179,9 +182,10 @@ const Register = () => {
           )}
           <p className="secondary-action">
             Already have an account?{" "}
-            <a className="link" href="#">
+            {/* <a className="link" href="#">
               Login here
-            </a>
+            </a> */}
+            <Link className="link" to={"/login"} >Login Now</Link>.
           </p>
         </Stack>
       </Box>

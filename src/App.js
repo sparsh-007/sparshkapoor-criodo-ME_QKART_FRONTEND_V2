@@ -11,7 +11,17 @@ export const config = {
 function App() {
   return (
     <div className="App">
-          <Register />
+          <Switch >
+            <Route path={"/register"}>
+              <Register />
+            </Route>
+            <Route path={"/login"}>
+              <Login/>
+            </Route>
+            <Route extact path={"/"}>
+              <Products/>
+            </Route>
+          </Switch>
     </div>
   );
 }
