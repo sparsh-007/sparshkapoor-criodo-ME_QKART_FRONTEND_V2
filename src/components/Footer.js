@@ -4,7 +4,7 @@ import "./Footer.css";
 
 const Footer = () => {
   return (
-    <Box className="footer">
+    <Box className="footer" mt={3}>
       <Box>
         <img src="logo_dark.svg" alt="QKart-icon"></img>
       </Box>
