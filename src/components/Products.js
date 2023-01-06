@@ -11,10 +11,11 @@ import { useSnackbar } from "notistack";
 import React, { useEffect, useState } from "react";
 import { config } from "../App";
 import Footer from "./Footer";
-import ProductCards from "./ProductCard";
 import Header from "./Header";
 import "./Products.css";
 import ProductCard from "./ProductCard";
+import Cart from "./Cart";
+import { generateCartItemsFrom } from "./Cart.js";
 
 // Definition of Data Structures used
 /**
@@ -41,14 +42,18 @@ const Products = () => {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
-  const [search,setSearch]=useState("");
-  const [status,setStatus]=useState(0);
-  const [debounce,setDebounce]=useState();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState(0);
+  const [debounce, setDebounce] = useState();
+  const [cartItem, setCartItem] = useState([]);
+  const [items, setItems] = useState([]);
 
   const handleSearch = (e) => {
     setSearch(e.target.value);
     debounceSearch(e, 500);
   };
+
+  const token = localStorage.getItem("token");
 
   // TODO: CRIO_TASK_MODULE_PRODUCTS - Fetch products data and store it
   /**
@@ -98,6 +103,10 @@ const Products = () => {
       const res = await axios.get(`${config.endpoint}/products`);
       setProducts(res.data);
       setLoading(false);
+      const cartData = await fetchCart(token);
+      setItems(cartData);
+      const cart = await generateCartItemsFrom(cartData, res.data);
+      setCartItem(cart);
     } catch (e) {
       if (e.response && e.response.status === 400) {
         enqueueSnackbar(e.response.data.message, { variant: "error" });
@@ -180,7 +189,7 @@ const Products = () => {
 
   // return (
   //   <div>
-  //    
+  //
 
   //     {/* Search view for mobiles */}
   // };
@@ -196,7 +205,6 @@ const Products = () => {
    *    Timer id set for the previous debounce call
    *
    */
-
 
   /**
    * Perform the API call to fetch the user's cart and return the response
@@ -231,6 +239,10 @@ const Products = () => {
 
     try {
       // TODO: CRIO_TASK_MODULE_CART - Pass Bearer token inside "Authorization" header to get data from "GET /cart" API and return the response data
+      const cartData = await axios.get(`${config.endpoint}/cart`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return cartData.data;
     } catch (e) {
       if (e.response && e.response.status === 400) {
         enqueueSnackbar(e.response.data.message, { variant: "error" });
@@ -246,7 +258,6 @@ const Products = () => {
     }
   };
 
-
   // TODO: CRIO_TASK_MODULE_CART - Return if a product already exists in the cart
   /**
    * Return if a product already is present in the cart
@@ -261,6 +272,16 @@ const Products = () => {
    *
    */
   const isItemInCart = (items, productId) => {
+    if (items) {
+      let check = items.filter((item) => item.productId === productId);
+      if (check.length > 0) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   };
 
   /**
@@ -299,6 +320,10 @@ const Products = () => {
    *      "message": "Product doesn't exist"
    * }
    */
+  const updateCartItem = (updatedData, products) => {
+    const recieveAllData = generateCartItemsFrom(updatedData, products);
+    setCartItem(recieveAllData);
+  };
 
   const addToCart = async (
     token,
@@ -308,14 +333,46 @@ const Products = () => {
     qty,
     options = { preventDuplicate: false }
   ) => {
+    if (!token) {
+      enqueueSnackbar("Login to add an item to the Cart", {
+        variant: "warning",
+      });
+      return;
+    }
+    if (options.preventDuplicate && isItemInCart(items, productId)) {
+      enqueueSnackbar(
+        "Item already in cart. Use the cart sidebar to update quantity or remove item.",
+        { variant: "warning" }
+      );
+      return;
+    }
+    try {
+      const toAdd = await axios.post(
+        `${config.endpoint}/cart`,
+        { productId, qty },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setItems(toAdd.data);
+      updateCartItem(toAdd.data, products);
+    } catch (e) {
+      if (e.response && e.response.status === 400) {
+        enqueueSnackbar(e.response.data.message, { variant: "error" });
+      } else {
+        enqueueSnackbar(
+          "Could not fetch cart details. Check that the backend is running, reachable and returns valid JSON.",
+          {
+            variant: "error",
+          }
+        );
+      }
+    }
   };
-
 
   return (
     <div>
-     <Header>
-      {/* TODO: CRIO_TASK_MODULE_PRODUCTS - Display search bar in the header for Products page */}
-     <TextField
+      <Header>
+        {/* TODO: CRIO_TASK_MODULE_PRODUCTS - Display search bar in the header for Products page */}
+        <TextField
           size="small"
           type="text"
           name="search-box"
@@ -329,6 +386,7 @@ const Products = () => {
           }}
           onChange={(e) => handleSearch(e)}
           placeholder="Search for items "
+          value={search}
         />
       </Header>
 
@@ -345,51 +403,70 @@ const Products = () => {
         }}
         onChange={(e) => handleSearch(e)}
         placeholder="Search for items/categories"
-        name="search"
+        value={search}
       />
-      <Grid container>
-        <Grid item className="product-grid">
-          <Box className="hero" mb={3}>
-            <p className="hero-heading">
-              India’s <span className="hero-highlight">FASTEST DELIVERY</span>{" "}
-              to your door step
-            </p>
-          </Box>
+      <Grid container direction="row" justifyContent="center">
+        <Grid container item md={9} spacing={2}>
+          <Grid container>
+            <Grid item className="product-grid">
+              <Box className="hero" mb={3} mt={2}>
+                <p className="hero-heading">
+                  India’s{" "}
+                  <span className="hero-highlight">FASTEST DELIVERY</span> to
+                  your door step
+                </p>
+              </Box>
+            </Grid>
+          </Grid>
+          {loading ? (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                flexDirection: "column",
+              }}
+            >
+              <CircularProgress />
+              <p>Loading Products...</p>
+            </Box>
+          ) : status === 404 ? (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                flexDirection: "column",
+              }}
+            >
+              <SentimentDissatisfied />
+              <p>No products found</p>
+            </Box>
+          ) : (
+            <Grid container className="product-container" spacing={2}>
+              {products.map((item) => (
+                <Grid item xs={12} md={3} sm={6} key={item._id}>
+                  <ProductCard
+                    product={item}
+                    handleAddToCart={async () => {
+                      await addToCart(token, items, products, item._id, 1, {
+                        preventDuplicate: true,
+                      });
+                    }}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Grid>
+        <Grid item md={3} text-align="center" bgcolor="#E9F5E1">
+          <Cart
+            products={products}
+            items={cartItem}
+            handleQuantity={addToCart}
+          />
         </Grid>
       </Grid>
-      {loading ? (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexDirection: "column",
-          }}
-        >
-          <CircularProgress />
-          <p>Loading Products...</p>
-        </Box>
-      ) : status === 404 ? (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexDirection: "column",
-          }}
-        >
-          <SentimentDissatisfied />
-          <p>No products found</p>
-        </Box>
-      ) : (
-        <Grid container className="product-container" spacing={2}>
-          {products.map((item) => (
-            <Grid item xs={12} md={3} sm={6} key={item._id}>
-              <ProductCard product={item} />
-            </Grid>
-          ))}
-        </Grid>
-      )}
       <Footer />
     </div>
   );

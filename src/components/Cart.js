@@ -13,7 +13,7 @@ import "./Cart.css";
 // Definition of Data Structures used
 /**
  * @typedef {Object} Product - Data on product available to buy
- * 
+ *
  * @property {string} name - The name or title of the product
  * @property {string} category - The category that the product belongs to
  * @property {number} cost - The price to buy the product
@@ -24,7 +24,7 @@ import "./Cart.css";
 
 /**
  * @typedef {Object} CartItem -  - Data on product added to cart
- * 
+ *
  * @property {string} name - The name or title of the product in cart
  * @property {string} qty - The quantity of product added to cart
  * @property {string} category - The category that the product belongs to
@@ -39,7 +39,7 @@ import "./Cart.css";
  *
  * @param { Array.<{ productId: String, qty: Number }> } cartData
  *    Array of objects with productId and quantity of products in cart
- * 
+ *
  * @param { Array.<Product> } productsData
  *    Array of objects with complete data on all available products
  *
@@ -48,6 +48,26 @@ import "./Cart.css";
  *
  */
 export const generateCartItemsFrom = (cartData, productsData) => {
+  console.log(cartData, productsData);
+  const productIds = cartData.map((item) => {
+    return item.productId;
+  });
+  const filteredProducts = productsData.filter((item) => {
+    return productIds.includes(item._id);
+  });
+  const cartItem = filteredProducts.map((ele, idx) => {
+    return {
+      name: ele.name,
+      qty: cartData[idx].qty,
+      category: ele.category,
+      cost: ele.cost,
+      rating: ele.rating,
+      image: ele.image,
+      productId: ele._id,
+    };
+  });
+  // console.log(cartItem)
+  return cartItem;
 };
 
 /**
@@ -61,28 +81,27 @@ export const generateCartItemsFrom = (cartData, productsData) => {
  *
  */
 export const getTotalCartValue = (items = []) => {
+  const totalValue = items.reduce((sum, item) => {
+    return sum + item.cost * item.qty;
+  }, 0);
+  return totalValue;
 };
-
 
 /**
  * Component to display the current quantity for a product and + and - buttons to update product quantity on cart
- * 
+ *
  * @param {Number} value
  *    Current quantity of product in cart
- * 
+ *
  * @param {Function} handleAdd
  *    Handler function which adds 1 more of a product to cart
- * 
+ *
  * @param {Function} handleDelete
  *    Handler function which reduces the quantity of a product in cart by 1
- * 
- * 
+ *
+ *
  */
-const ItemQuantity = ({
-  value,
-  handleAdd,
-  handleDelete,
-}) => {
+const ItemQuantity = ({ value, handleAdd, handleDelete }) => {
   return (
     <Stack direction="row" alignItems="center">
       <IconButton size="small" color="primary" onClick={handleDelete}>
@@ -100,24 +119,20 @@ const ItemQuantity = ({
 
 /**
  * Component to display the Cart view
- * 
+ *
  * @param { Array.<Product> } products
  *    Array of objects with complete data of all available products
- * 
+ *
  * @param { Array.<Product> } items
  *    Array of objects with complete data on products in cart
- * 
+ *
  * @param {Function} handleDelete
  *    Current quantity of product in cart
- * 
- * 
+ *
+ *
  */
-const Cart = ({
-  products,
-  items = [],
-  handleQuantity,
-}) => {
-
+const Cart = ({ products, items = [], handleQuantity }) => {
+  const history = useHistory();
   if (!items.length) {
     return (
       <Box className="cart empty">
@@ -128,11 +143,68 @@ const Cart = ({
       </Box>
     );
   }
+  console.log(items);
 
   return (
     <>
       <Box className="cart">
         {/* TODO: CRIO_TASK_MODULE_CART - Display view for each cart item with non-zero quantity */}
+
+        {items.map((ele) => {
+          return (
+            <Box display="flex" alignItems="flex-start" padding="1rem">
+              <Box className="image-container">
+                <img
+                  // Add product image
+                  src={ele.image}
+                  // Add product name as alt eext
+                  alt={ele.name}
+                  width="100%"
+                  height="100%"
+                />
+              </Box>
+              <Box
+                display="flex"
+                flexDirection="column"
+                justifyContent="space-between"
+                height="6rem"
+                paddingX="1rem"
+              >
+                <div>{ele.name}</div>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <ItemQuantity
+                  // Add required props by checking implementation
+                  value={ele.qty}
+                  handleAdd={() => {
+                  handleQuantity(
+                    localStorage.getItem("token"),
+                    items,
+                    products,
+                    ele.productId,
+                    ele.qty + 1
+                  );
+                }}
+                handleDelete={() => {
+                  handleQuantity(
+                    localStorage.getItem("token"),
+                    items,
+                    products,
+                    ele.productId,
+                    ele.qty - 1
+                  );}}
+                  />
+                  <Box padding="0.5rem" fontWeight="700">
+                    ${ele.cost}
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          );
+        })}
         <Box
           padding="1rem"
           display="flex"
@@ -159,6 +231,7 @@ const Cart = ({
             variant="contained"
             startIcon={<ShoppingCart />}
             className="checkout-btn"
+            onClick={(e) => history.push("/checkout")}
           >
             Checkout
           </Button>

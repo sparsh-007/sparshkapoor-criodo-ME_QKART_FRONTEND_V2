@@ -7,8 +7,6 @@ import "./Header.css";
 
 const Header = ({ children, hasHiddenAuthButtons }) => {
   const history = useHistory();
-  console.log(hasHiddenAuthButtons);
-  console.log(children);
   if (hasHiddenAuthButtons) {
     return (
       <Box className="header" >
@@ -29,7 +27,6 @@ const Header = ({ children, hasHiddenAuthButtons }) => {
     );
     }    else // Products page
     {
-      console.log(children);
       const userName = localStorage.getItem('username');
       if(userName && userName.length>0) // Products + Logged In
       {
