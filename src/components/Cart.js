@@ -4,7 +4,7 @@ import {
   ShoppingCart,
   ShoppingCartOutlined,
 } from "@mui/icons-material";
-import { Button, IconButton, Stack } from "@mui/material";
+import { Button, IconButton, Stack,Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import React from "react";
 import { useHistory } from "react-router-dom";
@@ -87,6 +87,12 @@ export const getTotalCartValue = (items = []) => {
   return totalValue;
 };
 
+export const getTotalItems = (items = []) => {
+  const totalQty = items.reduce((sum, ele) => {
+    return sum + ele.qty;
+  }, 0);
+  return totalQty;
+};
 /**
  * Component to display the current quantity for a product and + and - buttons to update product quantity on cart
  *
@@ -131,7 +137,7 @@ const ItemQuantity = ({ value, handleAdd, handleDelete }) => {
  *
  *
  */
-const Cart = ({ products, items = [], handleQuantity }) => {
+function Cart({ products, items = [], handleQuantity, isReadOnly = false }) {
   const history = useHistory();
   if (!items.length) {
     return (
@@ -145,14 +151,110 @@ const Cart = ({ products, items = [], handleQuantity }) => {
   }
   console.log(items);
 
+  // return (
+  //   <>
+  //     <Box className="cart">
+  //       {/* TODO: CRIO_TASK_MODULE_CART - Display view for each cart item with non-zero quantity */}
+  //       {items.map((ele) => {
+  //         return (
+  //           <Box display="flex" alignItems="flex-start" padding="1rem">
+  //             <Box className="image-container">
+  //               <img
+  //                 // Add product image
+  //                 src={ele.image}
+  //                 // Add product name as alt eext
+  //                 alt={ele.name}
+  //                 width="100%"
+  //                 height="100%"
+  //               />
+  //             </Box>
+  //             <Box
+  //               display="flex"
+  //               flexDirection="column"
+  //               justifyContent="space-between"
+  //               height="6rem"
+  //               paddingX="1rem"
+  //             >
+  //               <div>{ele.name}</div>
+  //               <Box
+  //                 display="flex"
+  //                 justifyContent="space-between"
+  //                 alignItems="center"
+  //               >
+  //                 <ItemQuantity
+  //                 // Add required props by checking implementation
+  //                 value={ele.qty}
+  //                 handleAdd={() => {
+  //                 handleQuantity(
+  //                   localStorage.getItem("token"),
+  //                   items,
+  //                   products,
+  //                   ele.productId,
+  //                   ele.qty + 1
+  //                 );
+  //               }}
+  //               handleDelete={() => {
+  //                 handleQuantity(
+  //                   localStorage.getItem("token"),
+  //                   items,
+  //                   products,
+  //                   ele.productId,
+  //                   ele.qty - 1
+  //                 );}}
+  //                 />
+  //                 <Box padding="0.5rem" fontWeight="700">
+  //                   ${ele.cost}
+  //                 </Box>
+  //               </Box>
+  //             </Box>
+  //           </Box>
+  //         );
+  //       })}
+  //       <Box
+  //         padding="1rem"
+  //         display="flex"
+  //         justifyContent="space-between"
+  //         alignItems="center"
+  //       >
+  //         <Box color="#3C3C3C" alignSelf="center">
+  //           Order total
+  //         </Box>
+  //         <Box
+  //           color="#3C3C3C"
+  //           fontWeight="700"
+  //           fontSize="1.5rem"
+  //           alignSelf="center"
+  //           data-testid="cart-total"
+  //         >
+  //           ${getTotalCartValue(items)}
+  //         </Box>
+  //       </Box>
+  //       <Box display="flex" justifyContent="flex-end" className="cart-footer">
+  //         <Button
+  //           color="primary"
+  //           variant="contained"
+  //           startIcon={<ShoppingCart />}
+  //           className="checkout-btn"
+  //           onClick={(e) => history.push("/checkout")}
+  //         >
+  //           Checkout
+  //         </Button>
+  //       </Box>
+  //     </Box>
+  //   </>
+  // );
   return (
     <>
       <Box className="cart">
         {/* TODO: CRIO_TASK_MODULE_CART - Display view for each cart item with non-zero quantity */}
-
         {items.map((ele) => {
           return (
-            <Box display="flex" alignItems="flex-start" padding="1rem">
+            <Box
+              display="flex"
+              alignItems="flex-start"
+              padding="1rem"
+              key={ele.productId}
+            >
               <Box className="image-container">
                 <img
                   // Add product image
@@ -160,8 +262,7 @@ const Cart = ({ products, items = [], handleQuantity }) => {
                   // Add product name as alt eext
                   alt={ele.name}
                   width="100%"
-                  height="100%"
-                />
+                  height="100%" />
               </Box>
               <Box
                 display="flex"
@@ -170,35 +271,40 @@ const Cart = ({ products, items = [], handleQuantity }) => {
                 height="6rem"
                 paddingX="1rem"
               >
-                <div>{ele.name}</div>
+                <div>{/* Add product name */ele.name}</div>
                 <Box
                   display="flex"
                   justifyContent="space-between"
                   alignItems="center"
                 >
-                  <ItemQuantity
-                  // Add required props by checking implementation
-                  value={ele.qty}
-                  handleAdd={() => {
-                  handleQuantity(
-                    localStorage.getItem("token"),
-                    items,
-                    products,
-                    ele.productId,
-                    ele.qty + 1
-                  );
-                }}
-                handleDelete={() => {
-                  handleQuantity(
-                    localStorage.getItem("token"),
-                    items,
-                    products,
-                    ele.productId,
-                    ele.qty - 1
-                  );}}
-                  />
+                  {!isReadOnly ? (
+                    <ItemQuantity
+                      value={ele.qty}
+                      handleAdd={() => {
+                        handleQuantity(
+                          localStorage.getItem("token"),
+                          items,
+                          products,
+                          ele.productId,
+                          ele.qty + 1
+                        );
+                      } }
+                      handleDelete={() => {
+                        handleQuantity(
+                          localStorage.getItem("token"),
+                          items,
+                          products,
+                          ele.productId,
+                          ele.qty - 1
+                        );
+                      } } />
+                  ) : (
+                    <Box padding="0.5rem" data-testid="item-qty">
+                      Qty: {ele.qty}
+                    </Box>
+                  )}
                   <Box padding="0.5rem" fontWeight="700">
-                    ${ele.cost}
+                    ${/* Add product cost */ele.cost}
                   </Box>
                 </Box>
               </Box>
@@ -224,21 +330,49 @@ const Cart = ({ products, items = [], handleQuantity }) => {
             ${getTotalCartValue(items)}
           </Box>
         </Box>
-
-        <Box display="flex" justifyContent="flex-end" className="cart-footer">
-          <Button
-            color="primary"
-            variant="contained"
-            startIcon={<ShoppingCart />}
-            className="checkout-btn"
-            onClick={(e) => history.push("/checkout")}
-          >
-            Checkout
-          </Button>
-        </Box>
+        {!isReadOnly && (
+          <Box display="flex" justifyContent="flex-end" className="cart-footer">
+            <Button
+              color="primary"
+              variant="contained"
+              startIcon={<ShoppingCart />}
+              className="checkout-btn"
+              onClick={(e) => history.push("/checkout")}
+            >
+              Checkout
+            </Button>
+          </Box>
+        )}
       </Box>
+      {isReadOnly && (
+        <Box padding="1rem" className="cart">
+          <Typography variant="h5" fontWeight="700" mb={2}>
+            Order Details
+          </Typography>
+          <Box display="flex" justifyContent="space-between" mb={1}>
+            <Typography> Products </Typography>
+            <Typography>${getTotalItems(items)}</Typography>
+          </Box>
+          <Box display="flex" justifyContent="space-between" mb={1}>
+            <Typography>Subtotal</Typography>
+            <Typography>${getTotalCartValue(items)} </Typography>
+          </Box>
+          <Box display="flex" justifyContent="space-between" mb={2}>
+            <Typography>Shipping Charges</Typography>
+            <Typography>$0</Typography>
+          </Box>
+          <Box display="flex" justifyContent="space-between" mb={2}>
+            <Typography variant="h6" fontWeight="700">
+              Total
+            </Typography>
+            <Typography variant="h6" fontWeight="700">
+              ${getTotalCartValue(items) + 0}
+            </Typography>
+          </Box>
+        </Box>
+      )}
     </>
   );
-};
+}
 
 export default Cart;
