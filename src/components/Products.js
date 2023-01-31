@@ -24,8 +24,7 @@ import { generateCartItemsFrom } from "./Cart.js";
  * @property {string} name - The name or title of the product
 import Header from "./Header";
 import "./Products.css";
-
-
+// performAPI we one for search 
 /**
  * @typedef {Object} CartItem -  - Data on product added to cart
  * 
@@ -94,7 +93,6 @@ const Products = () => {
    */
   useEffect(() => {
     performAPICall();
-    // eslint-disable-next-line
   }, []);
 
   const performAPICall = async () => {
